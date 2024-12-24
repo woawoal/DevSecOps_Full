@@ -1,7 +1,6 @@
 @echo off
 echo Starting Aurora Kubernetes deployment...
 
-
 timeout /t 5 /nobreak
 
 REM Create Kind cluster
