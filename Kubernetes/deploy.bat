@@ -1,27 +1,49 @@
 @echo off
-echo Starting Aurora Kubernetes deployment...
+echo Creating Kubernetes cluster...
 
-timeout /t 5 /nobreak
+REM Store the original directory
+set "ORIGINAL_DIR=%CD%"
+cd /d "%~dp0.."
+
+REM Check if kind exists
+if not exist "kind.exe" (
+    echo kind not found. Installing...
+    call Kubernetes\install-kind.bat
+    if !errorlevel! neq 0 (
+        echo Failed to install kind
+        cd /d "%ORIGINAL_DIR%"
+        exit /b !errorlevel!
+    )
+)
+
+REM Check kind version
+.\kind.exe --version
+if %errorlevel% neq 0 (
+    echo Failed to run kind.exe
+    cd /d "%ORIGINAL_DIR%"
+    exit /b %errorlevel%
+)
 
 REM Create Kind cluster
-echo Creating Kind cluster...
-kind create cluster --config kind-config.yaml --name aurora-cluster
+echo Creating cluster with config: %~dp0kind-config.yaml
+.\kind.exe create cluster --config Kubernetes/kind-config.yaml --name devsecops-cluster
 if %errorlevel% neq 0 (
-    echo Failed to create Kind cluster
+    echo Failed to create cluster
+    cd /d "%ORIGINAL_DIR%"
     exit /b %errorlevel%
 )
 
 echo.
-echo Deployment completed successfully!
-echo Waiting for pod to be ready...
-timeout /t 10 /nobreak
+echo Cluster created successfully!
+echo Getting node information...
 
-REM Show deployment status
-echo.
-echo Deployment Status:
-kubectl get pods -o wide
-echo.
-echo Service Status:
-kubectl get services
-echo.
-echo You can access the service at http://localhost:30080
+REM Get node information
+kubectl get nodes --show-labels
+if %errorlevel% neq 0 (
+    echo Failed to get node information
+    cd /d "%ORIGINAL_DIR%"
+    exit /b %errorlevel%
+)
+
+cd /d "%ORIGINAL_DIR%"
+echo Done!
