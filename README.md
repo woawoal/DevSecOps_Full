@@ -1,59 +1,100 @@
- # Full Project: On-premise DevSecOps 환경 구축
+ # DevSecOps 프로젝트
 
 ## 프로젝트 개요
-- **프로젝트 명칭**: DevSecOps 도입 프로젝트
-- **목적**:
-  - 개발/운영/보안을 통합하여 효율적인 DevSecOps 환경 구축
-  - 소프트웨어 개발 속도와 보안성을 동시에 강화
-  - 보안 취약점을 사전에 탐지 및 대응을 자동화하여 운영 비용 절감
-
-## 현재 상황 및 문제점
-- **현황 분석**:
-  - 기존 CI/CD 파이프라인에 보안 검증 단계 미흡
-  - 취약점 스캐닝과 코드 검토가 수동으로 이루어짐
-  - 운영 단계에서 발견되는 보안 문제로 인한 출시 지연
-- **주요 문제**:
-  - 보안 팀과 개발 팀 간 협업 부족
-  - 신속한 취약점 대응 체계 부재
-
-## 프로젝트 목표
-- **단기 목표**:
-  - CI/CD 파이프라인에 자동화된 보안 툴 통합
-  - 코드 및 이미지 스캔 프로세스 구축
-- **장기 목표**:
-  - DevSecOps 프로세스 정착 및 보안 의식 강화
-  - 보안 이슈 탐지부터 수정까지 소요되는 평균 시간(MTTR) 단축
-
-## 주요 구성 요소
-1. **CI/CD 파이프라인 강화**
-   - SAST(정적 애플리케이션 보안 테스트) 도구 통합
-   - DAST(동적 애플리케이션 보안 테스트) 도구 통합
-   - 컨테이너 이미지 스캔 및 레지스트리 보안 검증
-
-2. **인프라 보안 자동화**
-   - IaC(Infrastructure as Code) 보안 도구 도입
-   - 취약점 스캔 자동화 및 실시간 경고 시스템 구축
-
-3. **보안 정책 및 가이드라인**
-   - 웹 보안 관련 개발/운영 가이드 수립
-   - DevSecOps 프로세스 구축 가이드 문서 작성
+DevSecOps 방법론을 적용한 웹 애플리케이션 개발 및 운영 환경 구축 프로젝트입니다. 
+보안을 고려한 CI/CD 파이프라인과 모니터링 시스템을 구축하여 안전하고 효율적인 개발 환경을 제공합니다.
 
 ## 기술 스택
-- **SAST 도구**: SonarQube
-- **DAST 도구**: OWASP ZAP, Burp Suite
-- **CI/CD 도구**: Jenkins, DockerHub, GitHub
+- **컨테이너 오케스트레이션**: Kubernetes (Kind)
+- **CI/CD**: Jenkins
+- **로깅 & 모니터링**: ELK Stack (Elasticsearch, Logstash, Kibana)
+- **웹 서비스**: Apache, PHP
+- **버전 관리**: Git, GitHub
 
 ## 프로젝트 구조
 ```
 .
 ├── docs/                    # 문서화 자료
-├── infrastructure/          # 인프라 설정 파일
-├── pipelines/              # CI/CD 파이프라인 설정
-├── security/               # 보안 관련 설정 및 정책
-├── monitoring/             # 모니터링 설정
-└── scripts/                # 유틸리티 스크립트
+├── ELK/                    # Elasticsearch, Logstash, Kibana 스택
+│   └── k8s/                # ELK 스택 Kubernetes 매니페스트
+├── Jenkins/                # Jenkins CI/CD 서버
+│   └── k8s/                # Jenkins Kubernetes 매니페스트
+├── Kubernetes/             # Kubernetes 클러스터 설정
+│   ├── deploy.bat          # 클러스터 생성 스크립트
+│   ├── kind-config.yaml    # Kind 클러스터 설정
+│   └── reset-cluster.bat   # 클러스터 초기화 스크립트
+└── Web/                    # 웹 애플리케이션
+    ├── src/                # 소스 코드
+    └── k8s/                # 웹 서비스 Kubernetes 매니페스트
 ```
 
-## 웹 서비스 리소스
+## 컴포넌트 설명
+
+### 1. Kubernetes 클러스터 (/Kubernetes)
+- Kind를 사용한 로컬 Kubernetes 클러스터 구성
+- 워커 노드별 역할 분리 (웹서버, Jenkins, ELK 스택 등)
+- 자동화된 클러스터 생성 및 초기화 스크립트 제공
+
+### 2. Jenkins CI/CD (/Jenkins)
+- 자동화된 빌드 및 배포 파이프라인
+- GitHub 웹훅을 통한 자동 빌드 트리거
+- Kubernetes 매니페스트를 통한 컨테이너화된 Jenkins 배포
+- 보안 취약점 스캔 및 코드 품질 검사 통합
+
+### 3. ELK 스택 (/ELK)
+- 중앙 집중식 로깅 시스템
+- 실시간 로그 수집 및 분석
+- 시각화된 모니터링 대시보드
+- 보안 이벤트 감지 및 알림
+
+### 4. 웹 애플리케이션 (/Web)
+- Apache와 PHP 기반의 웹 서비스
+- Kubernetes에 최적화된 컨테이너 구성
+- 보안 강화를 위한 설정 적용
+- 자동 스케일링 지원
+
+## 시작하기
+
+### 사전 요구사항
+- Docker Desktop
+- Git
+- Windows 운영체제
+
+### 설치 및 실행
+1. 클러스터 초기화:
+```bash
+cd Kubernetes
+.\reset-cluster.bat
+```
+
+2. 클러스터 생성:
+```bash
+.\deploy.bat
+```
+
+3. Jenkins 배포:
+```bash
+cd ..\Jenkins
+.\jenkins-service.bat
+```
+
+4. ELK 스택 배포:
+```bash
+cd ..\ELK
+.\ELK.bat
+```
+
+5. 웹 서비스 배포:
+```bash
+cd ..\Web
+.\web-service.bat
+```
+
+## 접속 정보
+- Jenkins: http://localhost:8080
+- Kibana: http://localhost:5601
+- Elasticsearch: http://localhost:9200
+- 웹 서비스: http://localhost:30080
+
+## 참고 자료
 - https://github.com/GH6679/web_wargamer.git (웹 서비스 소스 코드)
-- 
