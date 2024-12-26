@@ -70,8 +70,8 @@ timeout /t 10 /nobreak > nul
 
 echo.
 echo Initial admin password:
-for /f "tokens=1" %%i in ('kubectl logs -l app=jenkins ^| findstr /v "found at" ^| findstr /r "^[a-f0-9]\{32\}$"') do (
-    echo %%i
+for /f "tokens=1" %%i in ('kubectl get pod -l app^=jenkins -o jsonpath^="{.items[0].metadata.name}"') do (
+    kubectl exec %%i -- cat /var/jenkins_home/secrets/initialAdminPassword
 )
 
 cd "%ORIGINAL_DIR%"
