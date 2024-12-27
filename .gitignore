@@ -13,3 +13,4 @@ kind.exe
 # Temporary files
 *.tmp
 *~
+/web_wargamer
