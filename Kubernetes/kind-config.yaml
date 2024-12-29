@@ -94,8 +94,8 @@ nodes:
     node-type: log-db
     purpose: log-storage
 
-# 워커 노드 6: 모니터링
+# 워커 노드 6: 웹 DB
 - role: worker
   labels:
-    node-type: monitoring
-    purpose: monitoring
+    node-type: web-db
+    purpose: mariadb-we
