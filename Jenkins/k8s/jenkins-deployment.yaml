@@ -67,6 +67,22 @@ spec:
           initialDelaySeconds: 60
           timeoutSeconds: 5
           periodSeconds: 10
+      - name: ngrok
+        image: ngrok/ngrok:latest
+        ports:
+        - containerPort: 4040
+          name: ngrok-api
+        env:
+        - name: NGROK_AUTHTOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ngrok-credentials
+              key: auth-token
+        args:
+        - "http"
+        - "--log=stdout"
+        - "--log-level=debug"
+        - "localhost:8080"
       volumes:
       - name: jenkins-home
         persistentVolumeClaim:
