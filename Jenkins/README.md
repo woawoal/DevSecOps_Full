@@ -28,7 +28,10 @@ Jenkins/
    echo -n "발급받은-토큰" | base64
    ```
 3. `k8s/ngrok-secret.yaml` 파일에 인코딩된 토큰 입력
-
+4. ngrok-credentials Secret 생성
+   ```bash
+   kubectl create secret generic ngrok-credentials --from-literal=auth-token="발급받은-토큰"
+   ```
 ### 2. Jenkins 배포
 
 #### 자동 배포 (권장)
