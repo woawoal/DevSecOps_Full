@@ -2,6 +2,27 @@
 chcp 65001 > nul
 setlocal enabledelayedexpansion
 
+REM Change to script directory
+cd /d "%~dp0"
+
+echo Starting Jenkins Service Deployment...
+
+REM Build Jenkins Docker image
+echo Building Jenkins Docker image...
+docker build -t jenkins-kubectl:latest .
+if %errorlevel% neq 0 (
+    echo Failed to build Docker image
+    exit /b %errorlevel%
+)
+
+REM Load the image into kind cluster
+echo Loading image into kind cluster...
+kind load docker-image jenkins-kubectl:latest --name devsecops-cluster
+if %errorlevel% neq 0 (
+    echo Failed to load image into kind cluster
+    exit /b %errorlevel%
+)
+
 echo Deploying Jenkins to Kubernetes...
 
 REM Store the original directory
@@ -34,6 +55,20 @@ ping -n 6 127.0.0.1 > nul
 echo.
 echo Applying Kubernetes configurations...
 
+REM Delete existing Jenkins deployment and related resources
+echo Cleaning up existing Jenkins resources...
+kubectl delete deployment jenkins --ignore-not-found
+kubectl delete configmap jenkins-kubeconfig --ignore-not-found
+kubectl delete -f "%~dp0k8s\jenkins-rbac.yaml" --ignore-not-found
+
+REM Create ConfigMap for kubeconfig
+echo Creating kubeconfig ConfigMap...
+kubectl create configmap jenkins-kubeconfig --from-file=config="%~dp0config\kubeconfig"
+
+REM Apply RBAC settings
+echo Applying RBAC settings...
+kubectl apply -f "%~dp0k8s\jenkins-rbac.yaml"
+
 REM Apply PV and PVC
 echo Creating persistent volume and claim...
 kubectl apply -f "%~dp0k8s\jenkins-pv.yaml"
@@ -43,7 +78,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-REM Apply Deployment
+REM Deploy Jenkins
 echo Deploying Jenkins...
 kubectl apply -f "%~dp0k8s\jenkins-deployment.yaml"
 if %errorlevel% neq 0 (
@@ -59,6 +94,15 @@ if %errorlevel% neq 0 (
     echo Failed to create service
     cd "%ORIGINAL_DIR%"
     exit /b %errorlevel%
+)
+
+REM Create Ngrok secret if not exists
+echo Checking Ngrok secret...
+kubectl get secret ngrok-credentials > nul 2>&1
+if %errorlevel% neq 0 (
+    echo Please enter your Ngrok authtoken:
+    set /p NGROK_TOKEN=
+    kubectl create secret generic ngrok-credentials --from-literal=auth-token=%NGROK_TOKEN%
 )
 
 echo.

@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_IMAGE = "redrayn/wargame"
+        DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
+        KUBE_NAMESPACE = "wargame"
+        DEPLOYMENT_NAME = "wargame-deployment"
+        CONTAINER_NAME = "wargame"
+    }
+    
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'DOCKER_TAG', value: '$.push_data.tag'],
+                [key: 'DOCKER_REPO', value: '$.repository.repo_name']
+            ],
+            causeString: 'Triggered by Docker Hub push',
+            token: 'wargame-webhook-token',
+            printContributedVariables: true,
+            printPostContent: true,
+            silentResponse: false,
+            regexpFilterText: '$DOCKER_REPO',
+            regexpFilterExpression: '^redrayn/wargame$'
+        )
+    }
+    
+    stages {
+        stage('Verify Webhook') {
+            steps {
+                script {
+                    echo "Received webhook from Docker Hub"
+                    echo "Repository: ${DOCKER_REPO}"
+                    echo "Tag: ${DOCKER_TAG}"
+                }
+            }
+        }
+        
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig-credentials']) {
+                        // 네임스페이스가 없으면 생성
+                        sh """
+                            if ! kubectl get namespace ${KUBE_NAMESPACE}; then
+                                kubectl create namespace ${KUBE_NAMESPACE}
+                            fi
+                        """
+                        
+                        // 이미지 업데이트
+                        sh """
+                            kubectl set image deployment/${DEPLOYMENT_NAME} ${CONTAINER_NAME}=${DOCKER_IMAGE}:latest -n ${KUBE_NAMESPACE}
+                            kubectl rollout status deployment/${DEPLOYMENT_NAME} -n ${KUBE_NAMESPACE}
+                        """
+                        echo "Application Deployed to Kubernetes Cluster"
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "Pipeline Completed Successfully!"
+        }
+        failure {
+            echo "Pipeline Failed."
+        }
+    }
+}

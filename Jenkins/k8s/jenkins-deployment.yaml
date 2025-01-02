@@ -14,11 +14,16 @@ spec:
       labels:
         app: jenkins
     spec:
+      hostAliases:
+      - ip: "172.18.0.8"
+        hostnames:
+        - "devsecops-cluster-control-plane"
       nodeSelector:
         purpose: jenkins
       securityContext:
         runAsUser: 0
         fsGroup: 0
+      serviceAccountName: jenkins
       initContainers:
       - name: init-jenkins-home
         image: busybox
@@ -28,7 +33,8 @@ spec:
           mountPath: /var/jenkins_home
       containers:
       - name: jenkins
-        image: jenkins/jenkins:lts
+        image: jenkins-kubectl:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8080
           name: http
@@ -37,6 +43,8 @@ spec:
         volumeMounts:
         - name: jenkins-home
           mountPath: /var/jenkins_home
+        - name: kubeconfig
+          mountPath: /var/jenkins_home/.kube
         env:
         - name: JAVA_OPTS
           value: "-Xmx2048m"
@@ -82,8 +90,11 @@ spec:
         - "http"
         - "--log=stdout"
         - "--log-level=debug"
-        - "localhost:8080"
+        - "jenkins:8080"
       volumes:
       - name: jenkins-home
         persistentVolumeClaim:
           claimName: jenkins-pvc
+      - name: kubeconfig
+        configMap:
+          name: jenkins-kubeconfig
